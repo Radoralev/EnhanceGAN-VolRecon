@@ -131,7 +131,7 @@ if __name__ == "__main__":
                                                 shuffle=False)  
                 dataloader_test.append(dataloader_tmp)
         else:
-            for scan in ["general"]:
+            for scan in ["scan1"]:
                 
                 dataset_tmp = GeneralFit(root_dir=args.test_dir, 
                                     scan_id=scan, 

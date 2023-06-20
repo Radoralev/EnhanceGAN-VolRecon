@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-DATASET="../CUSTOM"
+DATASET="../Rectified_colmap"
 
 LOAD_CKPT="checkpoints/epoch=15-step=193199.ckpt" 
 

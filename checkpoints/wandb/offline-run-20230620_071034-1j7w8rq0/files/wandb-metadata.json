@@ -1,0 +1,137 @@
+{
+    "os": "Linux-5.15.0-72-generic-x86_64-with-glibc2.17",
+    "python": "3.8.16",
+    "heartbeatAt": "2023-06-20T05:10:34.443708",
+    "startedAt": "2023-06-20T05:10:34.372159",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "--extract_geometry",
+        "--test_general",
+        "--test_n_view",
+        "5",
+        "--test_ray_num",
+        "400",
+        "--volume_reso",
+        "96",
+        "--test_dir=../Rectified_colmap",
+        "--load_ckpt=checkpoints/epoch=15-step=193199.ckpt",
+        "--out_dir=./outputs_general"
+    ],
+    "state": "running",
+    "program": "main.py",
+    "codePath": "main.py",
+    "git": {
+        "remote": null,
+        "commit": "613daf2883d407ad9990a2cb2a58deb304bc74c0"
+    },
+    "email": "walha.nassim@gmail.com",
+    "root": "/mnt/hdd/radoslav_nassim_workdir/VolRecon",
+    "host": "VC02",
+    "username": "rozenberszki",
+    "executable": "/home/rozenberszki/miniconda3/envs/volrecon/bin/python",
+    "cpu_count": 8,
+    "cpu_count_logical": 16,
+    "cpu_freq": {
+        "current": 3735.9725625,
+        "min": 1200.0,
+        "max": 4575.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4700.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 1275.561,
+            "min": 1200.0,
+            "max": 4700.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4600.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4600.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4700.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4700.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4500.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4600.0
+        },
+        {
+            "current": 3900.0,
+            "min": 1200.0,
+            "max": 4600.0
+        }
+    ],
+    "disk": {
+        "total": 937.3305015563965,
+        "used": 60.57900619506836
+    },
+    "gpu": "NVIDIA RTX A4000",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA RTX A4000",
+            "memory_total": 17171480576
+        }
+    ],
+    "memory": {
+        "total": 62.498470306396484
+    }
+}

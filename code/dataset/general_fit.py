@@ -225,7 +225,7 @@ class GeneralFit:
             img_filename = os.path.join(self.data_dir, 'images/{:0>8}.jpg'.format(vid))
             images_list.append(img_filename)
 
-            proj_mat_filename = os.path.join(self.data_dir, 'cameras/{:0>8}_cam.txt'.format(vid))
+            proj_mat_filename = os.path.join(self.data_dir, 'cams/{:0>8}_cam.txt'.format(vid))
             P, near_, far_ = self.read_cam_file(proj_mat_filename)
 
             raw_near_fars.append(np.array([near_,far_]))
