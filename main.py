@@ -77,6 +77,7 @@ if __name__ == "__main__":
     parser.add_argument('--set', dest='set', type=int, default=0,
         help='two sets are provided by SparseNeuS')
 
+    parser.add_argument('--n_randomly_generated_views', dest='n_randomly_generated_views', type=int, default=0) #0: generate all available views. !=0: generate the given number of views (chosen randomly from available views)
     args = parser.parse_args()
     
     batch_size = args.batch_size
@@ -135,7 +136,8 @@ if __name__ == "__main__":
                 
                 dataset_tmp = GeneralFit(root_dir=args.test_dir, 
                                     scan_id=scan, 
-                                    n_views=args.test_n_view)
+                                    n_views=args.test_n_view,
+                                    n_randomly_generated_views=args.n_randomly_generated_views)
                 dataloader_tmp = DataLoader(dataset_tmp,
                                                 batch_size=1, 
                                                 num_workers=1, 

@@ -5,6 +5,7 @@ import os
 import logging
 from einops import repeat
 from .scene_transform import get_boundingbox
+import numpy.random as npr
 
 
 def load_K_Rt_from_P(filename, P=None):
@@ -34,10 +35,13 @@ def load_K_Rt_from_P(filename, P=None):
 class GeneralFit:
     def __init__(self, root_dir, scan_id, n_views=5,
                  img_wh=[800, 600], clip_wh=[0, 0], 
-                 N_rays=512):
+                 N_rays=512, n_randomly_generated_views=0):
         super(GeneralFit, self).__init__()
         logging.info('Load data: Begin')
-
+        
+        self.n_randomly_generated_views = n_randomly_generated_views #Default = 0. In that case generates all available input views. 
+        #Otherwise randomly chooses min{#available input views, n_randomly_generated_views} views from the input views and generates them.
+        
         self.root_dir = root_dir
         self.scan_id = scan_id
         self.offset_dist = 0.025 # 25mm, assume the metric is meter
@@ -84,6 +88,16 @@ class GeneralFit:
                 src_views = [int(x) for x in f.readline().rstrip().split()[1::2]]
                 metas.append((ref_view, src_views))
         # print("dataset", "metas:", len(metas))
+        
+        if self.n_randomly_generated_views > 0 : #In case the user doesn't want to generate all available views
+            #But rather a given number of views
+            #Randomly choose the given number of views
+            n_views_to_generate = min(len(metas), self.n_randomly_generated_views)
+            npr.shuffle(metas)
+            return metas[:n_views_to_generate]
+            
+            
+        
         return metas
 
 
