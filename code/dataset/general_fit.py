@@ -87,7 +87,7 @@ class GeneralFit:
                 ref_view = int(f.readline().rstrip())
                 src_views = [int(x) for x in f.readline().rstrip().split()[1::2]]
                 metas.append((ref_view, src_views))
-        # print("dataset", "metas:", len(metas))
+
         
         if self.n_randomly_generated_views > 0 : #In case the user doesn't want to generate all available views
             #But rather a given number of views
@@ -227,10 +227,10 @@ class GeneralFit:
     def __getitem__(self, idx):
         sample = {}
         ref_view, src_views = self.metas[idx]
-        view_ids = [ref_view] + src_views[:self.n_views-1]
+        view_ids = [ref_view] + src_views
         idx = list(range(self.n_views))
         render_idx = 0
-        src_idx = idx
+        src_idx = idx[1:] + [self.n_views]
 
         world_mats_np = []
         images_list = []
