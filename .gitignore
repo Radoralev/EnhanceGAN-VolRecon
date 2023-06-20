@@ -131,3 +131,9 @@ dmypy.json
 /outputs_general/
 /runs/
 /SampleSet/
+wandb/
+/lightning_logs/
+/outputs_g_test/
+/outputs_g_test2/
+/outputs_g_final/
+/nohup.out

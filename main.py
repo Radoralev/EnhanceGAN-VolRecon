@@ -132,7 +132,13 @@ if __name__ == "__main__":
                                                 shuffle=False)  
                 dataloader_test.append(dataloader_tmp)
         else:
-            for scan in ["scan1"]:
+            #We exclude the following scans because the preprocessing with colmap caused errors
+            scans_to_exclude = ["scan88", "scan91", "scan92", "scan113", "scan87", "scan127", "scan9", "scan85", "scan86", "scan112" ,"scan89", "scan54", "scan90", "scan78",
+                                "scan79", "scan80", "scan81"]
+            #We include all remaining scans
+            scans_to_include =[f'scan{i}' for i in range(1,129) if f'scan{i}' not in scans_to_exclude]
+            
+            for scan in scans_to_include:
                 
                 dataset_tmp = GeneralFit(root_dir=args.test_dir, 
                                     scan_id=scan, 
