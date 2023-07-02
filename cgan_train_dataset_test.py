@@ -1,17 +1,26 @@
 from torchvision import transforms
 import matplotlib.pyplot as plt
-from code.dataset.cgan_train_sparse import CustomDataset
+from code.dataset.cgan_train_sparse import CGanTrainDataset, CGANTestDataset
 import numpy as np
+from code.cgan.cgan import Pix2PixModel
 
 data_transform = transforms.Compose([
         transforms.Resize((600, 800)),
         transforms.ToTensor(),
     ])
 
-root_dir1 = '../DTU_TEST/'
-root_dir2 = 'outputs/'
+class Pix2PixOptions:
+    def __init__(self):
+        self.isTrain=True
+        self.resize_or_crop = 'resize'
+        self.loadSize = 800
+        self.fineSize = 512
+        self.no_flip = False
+
+root_dir2 = '../Rectified_colmap/'
+root_dir1 = 'outputs_g_final/rgb/'
 # Create the dataset
-dataset = CustomDataset(root_dir1, root_dir2, transform=data_transform)
+dataset = CGanTrainDataset(root_dir1, root_dir2, Pix2PixOptions(), True)
 
 
 
@@ -49,14 +58,15 @@ for i, pair_idx in enumerate(pairs_to_visualize):
         ax = axs[i, j]
 
         if j == 0:  # input image
-            img = pair['input'][0]  # assuming one input image per pair
+            img = pair['input']  # assuming one input image per pair
             ax.set_title('Input Image')
         else:  # ground truth
-            img = pair['ground_truth'][0]  # assuming one ground truth image per pair
+            img = pair['ground_truth'] # assuming one ground truth image per pair
             ax.set_title('Ground Truth Image')
 
+        
         # Show the image
-        ax.imshow(tensor_to_img(img))
+        ax.imshow(img)
 
         # Remove the axis
         ax.axis('off')
