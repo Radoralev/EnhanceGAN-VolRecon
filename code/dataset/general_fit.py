@@ -33,16 +33,17 @@ def load_K_Rt_from_P(filename, P=None):
 
 
 class GeneralFit:
-    def __init__(self, root_dir, scan_id, n_views=5,
+    def __init__(self, root_dir, out_dir, scan_id, n_views=5,
                  img_wh=[800, 600], clip_wh=[0, 0], 
-                 N_rays=512, n_randomly_generated_views=0):
+                 N_rays=512, n_randomly_generated_views=0, enforced_views=[]):
         super(GeneralFit, self).__init__()
         logging.info('Load data: Begin')
         
         self.n_randomly_generated_views = n_randomly_generated_views #Default = 0. In that case generates all available input views. 
         #Otherwise randomly chooses min{#available input views, n_randomly_generated_views} views from the input views and generates them.
-        
+        self.enforced_views= enforced_views
         self.root_dir = root_dir
+        self.out_dir = out_dir
         self.scan_id = scan_id
         self.offset_dist = 0.025 # 25mm, assume the metric is meter
         self.n_views = n_views 
@@ -92,9 +93,31 @@ class GeneralFit:
         if self.n_randomly_generated_views > 0 : #In case the user doesn't want to generate all available views
             #But rather a given number of views
             #Randomly choose the given number of views
-            n_views_to_generate = min(len(metas), self.n_randomly_generated_views)
+            #Here we also look at the views available in the output directory and generate only new self.n_randomly_generated_views views
+            #This allows the view generation to happen incrementally on-demand since the data set is too large and it will take a lot of time to generate all
+            #scenes at once
             npr.shuffle(metas)
-            return metas[:n_views_to_generate]
+            out_scan_dir = os.path.join(self.out_dir, 'rgb', self.scan_id)
+            file_names_list = os.listdir(out_scan_dir)
+            available_views_list = [int(name[0:-4]) for name in file_names_list]
+            remaining_enforced_views = [view for view in self.enforced_views if view not in available_views_list]
+            assert len(remaining_enforced_views)<= self.n_randomly_generated_views, f"Contradicting requirements: you want to include the {len(remaining_enforced_views)} views" + \
+                f"{remaining_enforced_views}, which are not already generated, but only generate {self.n_randomly_generated_views} view in total."
+            #Starting by including the enforced views that are not already there
+            newly_added_views = [meta for meta in metas if meta[0] in remaining_enforced_views]
+            for i in range(len(metas)): #Add self.n_randomly_generated_views-len(remaining_enforced_views) views from metas, as long as they aren't alrady in the output directory or 
+                #within remaining_enforced_views
+                if len(newly_added_views) == self.n_randomly_generated_views:
+                    break
+                if metas[i][0] not in available_views_list and metas[i][0] not in remaining_enforced_views:
+                    newly_added_views.append(metas[i])
+            
+            if len(newly_added_views)<self.n_randomly_generated_views:
+                logging.warning(f'Will generate only {len(newly_added_views)} new views for scene {self.scan_id}, since all other views already exist in the output directory-')
+            
+            indices_newly_added_views = [element[0] for element in newly_added_views] #Just for debug
+            print(f"Scan {self.scan_id}: Already available {available_views_list}, enforced {self.enforced_views}, generating {indices_newly_added_views}.")
+            return newly_added_views
             
             
         

@@ -276,7 +276,7 @@ class GANLoss(nn.Module):
         else:
             target_tensor = self.fake_label
             #prediction = torch.cat(prediction[0][0], dim=0)
-        print(prediction)
+        #print(prediction)
         return target_tensor.expand_as(prediction)
         
     def __call__(self, prediction, target_is_real):
@@ -309,11 +309,12 @@ class GANLossHD(nn.Module):
         self.real_label_var = None
         self.fake_label_var = None
         self.Tensor = tensor
+        self.zero_tensor = None
         if use_lsgan:
             self.loss = nn.MSELoss()
         else:
             self.loss = nn.BCELoss()
-
+        """
     def get_target_tensor(self, input, target_is_real):
         target_tensor = None
         if target_is_real:
@@ -340,6 +341,44 @@ class GANLossHD(nn.Module):
                 target_tensor = self.get_target_tensor(pred, target_is_real)
                 loss += self.loss(pred, target_tensor)
             return loss
+        else:            
+            target_tensor = self.get_target_tensor(input[-1], target_is_real)
+            return self.loss(input[-1], target_tensor)
+"""
+    def loss(self, input, target_is_real, for_discriminator=True):
+        print (input.size())
+        if target_is_real:
+            minval = torch.min(input - 1, self.get_zero_tensor(input))
+            loss = -torch.mean(minval)
+        else:
+            minval = torch.min(-input - 1, self.get_zero_tensor(input))
+            loss = -torch.mean(minval)
+        return loss
+
+
+    def get_zero_tensor(self, input):
+        if self.zero_tensor is None:
+            self.zero_tensor = self.Tensor(1).fill_(0).cuda()
+            self.zero_tensor.requires_grad_(False)
+        return self.zero_tensor.expand_as(input)
+
+    def __call__(self, input, target_is_real):
+        """
+        NOTE: This is the hinge loss taken from the
+        """    
+        if isinstance(input, list):
+            loss = 0
+            for input_i in input:
+                if isinstance(input_i, list): 
+                    pred = input_i[-1]
+                else:
+                    pred = input_i
+                #target_tensor = self.get_target_tensor(pred, target_is_real)
+                loss_tensor = self.loss(pred, target_is_real)
+                bs = 1 if len(loss_tensor.size()) == 0 else loss_tensor.size(0)
+                new_loss = torch.mean(loss_tensor.view(bs, -1), dim=1)
+                loss += new_loss
+            return loss / len(input)
         else:            
             target_tensor = self.get_target_tensor(input[-1], target_is_real)
             return self.loss(input[-1], target_tensor)

@@ -73,7 +73,12 @@ def main(ckpt_netG, ckpt_netD, out):
 
     # Load Model
     pix2pix_model = load_model(pix2pix_options, ckpt_netG, ckpt_netD)
+    num_parameters_D = sum(p.numel() for p in pix2pix_model.netD.parameters() if p.requires_grad)
+    num_parameters_G = sum(p.numel() for p in pix2pix_model.netG.parameters() if p.requires_grad)
 
+    print('Number of parameters in discriminator: ', num_parameters_D)
+    print('Number of parameters in generator: ', num_parameters_G)
+    return
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     dataset_test = CGanTrainDataset(root_dir1, root_dir2, opt=pix2pix_options, isTrain=False)

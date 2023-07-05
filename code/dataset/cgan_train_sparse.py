@@ -26,7 +26,7 @@ def get_params(opt, size):
     flip = random.random() > 0.5
     return {'crop_pos': (x, y), 'flip': flip}
 
-def get_transform(opt, params, method=InterpolationMode.BICUBIC, normalize=True, isTrain=False):
+def get_transform(opt, params, method=InterpolationMode.BICUBIC, normalize=True, isTrain=False, isDepth=False):
     transform_list = []
     if 'resize' in opt.resize_or_crop:
         osize = [opt.loadSize, opt.loadSize]
@@ -48,7 +48,7 @@ def get_transform(opt, params, method=InterpolationMode.BICUBIC, normalize=True,
 
     transform_list += [transforms.ToTensor()]
 
-    if normalize:
+    if normalize and not isDepth:
         transform_list += [transforms.Normalize((0.5, 0.5, 0.5),
                                                 (0.5, 0.5, 0.5))]
     return transforms.Compose(transform_list)
@@ -85,7 +85,7 @@ def __flip(img, flip):
         return img.transpose(Image.FLIP_LEFT_RIGHT)
     return img
 
-class CustomDataset(Dataset):
+class CGANTestDataset(Dataset):
     def __init__(self, root_dir1, root_dir2, scan_list, opt, isTrain):
         self.root_dir1 = root_dir1
         self.root_dir2 = root_dir2
@@ -99,6 +99,7 @@ class CustomDataset(Dataset):
 
         self.flattened_list = [(scan_id, img_name) for scan_id in self.scan_list for img_name in self.rgb_to_ref.keys()]
 
+
     def __len__(self):
         return len(self.flattened_list)
 
@@ -108,6 +109,9 @@ class CustomDataset(Dataset):
         # Load input image
         img_path = os.path.join(self.root_dir2, 'rgb', scan_id, img_name)
         input_img = Image.open(img_path).convert('RGB')
+        
+        img_path = os.path.join(self.root_dir2, scan_id, 'depth', img_name.split('.')[0]+'.png')
+        depth_img = Image.open(img_path).convert('L')
 
         # Load corresponding ground truth image
         ref_view = self.rgb_to_ref[img_name]
@@ -119,8 +123,77 @@ class CustomDataset(Dataset):
         
         # Apply the same transformations to both images
         transform = get_transform(self.opt, params, isTrain=self.isTrain)
+        transform_depth = get_transform(self.opt, params, isTrain=self.isTrain, isDepth=True)
 
         input_img = transform(input_img)
         ground_truth_img = transform(ground_truth_img)
+        depth_img = transform_depth(depth_img)
 
-        return {'input': input_img, 'ground_truth': ground_truth_img}
+        return {'input': input_img, 'ground_truth': ground_truth_img, 'depth_image': depth_img}
+
+
+class CGanTrainDataset(Dataset):
+    def __init__(self, root_dir1, root_dir2, opt, isTrain=True):
+        self.root_dir1 = root_dir1
+        self.root_dir2 = root_dir2
+        self.opt = opt
+        self.isTrain = isTrain
+
+
+        # List directories in root_dir1 as scans and sort them
+
+        # Select first 5 scans for testing, rest for training
+        self.scan_list_test = [55, 63, 65, 37, 24, 40, 69, 83, 97, 105, 106, 110, 114, 118, 122]
+        temp = []
+        for i,x in enumerate(self.scan_list_test):
+            temp.append('scan'+str(x))
+
+        self.scan_list = sorted([dir_name for dir_name in os.listdir(os.path.join(root_dir1, 'rgb')) if os.path.isdir(os.path.join(root_dir1, 'rgb', dir_name))])
+        self.depth_list = sorted([dir_name for dir_name in os.listdir(root_dir1) if os.path.isdir(os.path.join(root_dir1, dir_name, 'depth'))])
+        
+        if not self.isTrain:
+            self.scan_list = [x for x in self.scan_list if x in temp]
+            self.depth_list = [x for x in self.depth_list if x in temp]
+        else:
+            self.scan_list = [x for x in self.scan_list if x not in temp]
+            self.depth_list = [x for x in self.depth_list if x not in temp]
+
+        # Collect all image files from selected scan directories
+        if not self.isTrain:
+            self.flattened_list = [(scan_id, img_name) for scan_id in self.scan_list for img_name in os.listdir(os.path.join(root_dir1, 'rgb', scan_id)) if img_name.endswith('.jpg') and int(img_name.split('.')[0][-2:]) in (23, 24, 33)]
+            self.flattened_list_depth = [(scan_id, img_name) for scan_id in self.depth_list for img_name in os.listdir(os.path.join(root_dir1, scan_id, 'depth')) if img_name.endswith('.png') and int(img_name.split('.')[0][-2:]) in (23, 24, 33)]
+        else:
+            self.flattened_list = [(scan_id, img_name) for scan_id in self.scan_list for img_name in os.listdir(os.path.join(root_dir1, 'rgb', scan_id)) if img_name.endswith('.jpg') and int(img_name.split('.')[0][-2:]) not in (23, 24, 33)]
+            self.flattened_list_depth = [(scan_id, img_name) for scan_id in self.depth_list for img_name in os.listdir(os.path.join(root_dir1, scan_id, 'depth')) if img_name.endswith('.png') and int(img_name.split('.')[0][-2:]) not in (23, 24, 33)]
+
+    def __len__(self):
+        return len(self.flattened_list)
+
+    def __getitem__(self, idx):
+        scan_id, img_name = self.flattened_list[idx]
+        scan_id_depth, depth_img_name = self.flattened_list_depth[idx]
+        # Load image from root_dir1
+        img_path1 = os.path.join(self.root_dir1, 'rgb', scan_id, img_name)
+        input_img = Image.open(img_path1).convert('RGB')
+
+        # Load corresponding depth image
+
+        depth_img_path = os.path.join(self.root_dir1, scan_id_depth,'depth', depth_img_name)
+        depth_img = Image.open(depth_img_path).convert('L')
+        # Load corresponding image from root_dir2
+        img_path2 = os.path.join(self.root_dir2, scan_id, 'images', img_name)
+        ground_truth_img = Image.open(img_path2).convert('RGB')
+        
+        # Calculate transformation parameters only for training
+
+        params = get_params(self.opt, input_img.size)
+        transform = get_transform(self.opt, params, isTrain=self.isTrain)
+        transform_depth = get_transform(self.opt, params, isTrain=self.isTrain, isDepth=True)
+
+
+
+        input_img = transform(input_img)
+        ground_truth_img = transform(ground_truth_img)
+        depth_img = transform_depth(depth_img)
+
+        return {'input': input_img, 'ground_truth': ground_truth_img, 'depth_image': depth_img}
