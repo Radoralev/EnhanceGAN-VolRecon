@@ -49,8 +49,5 @@ python evaluate_cgan.py --ckpt_netD <ckpt> --ckpt_netG <ckpt> --out <out.csv>
 ## Acknowledgement
 Our method is an extension of VolRecon. We thank the authors for their excellent work and for making their code open-source.
 
-Please replace `<run_name>`, `<ckptnetD>`, `<ckptnetG>`, and `<ckpt>` with your specific values. Replace project_website` and `link_to_paper` with the correct URLs for your project website and paper.
-
-
 
 
