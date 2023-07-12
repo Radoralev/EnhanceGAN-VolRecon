@@ -100,7 +100,8 @@ class DP_GAN_Generator(nn.Module):
         self.conv_img = nn.Conv2d(self.channels[-1], 3, 3, padding=1)
         self.up = nn.Upsample(scale_factor=2)
         self.body = nn.ModuleList([])
-        self.netFeat = opt.feat_extr
+        if opt.condition_on_volrecon_features:
+            self.netFeat = opt.feat_extr
         
         if not self.opt.no_3dnoise:
             self.adaGN = AdaGN(self.opt.semantic_nc + self.opt.z_dim, 9, 32)
@@ -134,7 +135,8 @@ class DP_GAN_Generator(nn.Module):
     def forward(self, input, z=None):
         seg = input
         # Extract features with the FPN of VolRecon
-        feats = self.netFeat(seg[:, :3, :, :])
+        if self.opt.condition_on_volrecon_features:
+            feats = self.netFeat(seg[:, :3, :, :])
         
         # Add noise
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")        
@@ -146,8 +148,9 @@ class DP_GAN_Generator(nn.Module):
         
         
         x = F.interpolate(seg, size=(self.init_W, self.init_H))
-        feats = F.interpolate(feats, size=(16, 16), mode='bilinear')
-        x = self.adaGN(x, feats)
+        if self.opt.condition_on_volrecon_features:
+            feats = F.interpolate(feats, size=(16, 16), mode='bilinear')
+            x = self.adaGN(x, feats)
 
 
         pyrmid = []

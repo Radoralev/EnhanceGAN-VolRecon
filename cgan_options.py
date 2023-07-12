@@ -84,5 +84,6 @@ class Pix2PixOptions:
         # For training
         self.beta1 = 0.0#
         # For testing
+        self.condition_on_volrecon_features = True
         self.feat_extr = load_only_FPN_feature_extractor_from_checkpoint(
             ckpt_dir)#
