@@ -9,16 +9,6 @@
 >**Abstract:** Building on the success of VolRecon, a novel generalizable implicit reconstruction method, we present an extension that employs dual pyramid Generative Adversarial Networks (GANs) to improve the quality of the reconstruction output. We aimed to address the persistent problem of artifacts and distortions created by volumetric reconstruction methods, specifically using VolRecon as our baseline. Our method incorporates multiple conditioning steps in the generation step. Our model showed significant improvements in image quality over the baseline, according to metrics such as PSNR, MSE, and SSIM. This research represents an important step towards more advanced, GAN-based image enhancement techniques, and it opens up several promising directions for future research.
 
 
-If you find this project useful for your research, please cite: 
-
-@misc{author2024enhancevolrecon,
-title={GAN-Enhanced Generalizable Novel View Synthesis},
-author={Ralev, Radoslav; Walha, Nassim},
-journal={CVPR},
-year={2024}
-}
-
-
 ## Installation
 
 ### Requirements
