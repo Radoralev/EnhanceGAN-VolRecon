@@ -2,10 +2,6 @@ import torch
 from .base_model import BaseModel
 from . import networks
 from code.dpgan import generator as generators
-from code.dpgan import discriminator as discriminators
-
-from code.dpgan import generator as generators
-from code.dpgan import discriminator as discriminators
 
 class Pix2PixModel(BaseModel):
     """ This class implements the pix2pix model, for learning a mapping from input images to output images given paired data.
@@ -47,6 +43,7 @@ class Pix2PixModel(BaseModel):
             opt (Option class)-- stores all the experiment flags; needs to be a subclass of BaseOptions
         """
         BaseModel.__init__(self, opt)
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.old_lr = self.opt.lr
         # specify the training losses you want to print out. The training/test scripts will call <BaseModel.get_current_losses>
         self.loss_names = ['G_GAN', 'G_L1', 'D_real', 'D_fake']
@@ -57,59 +54,19 @@ class Pix2PixModel(BaseModel):
             self.model_names = ['G', 'D']
         else:  # during test time, only load G
             self.model_names = ['G']
-        self.gen_features = opt.gen_features
         # define networks (both generator and discriminator)
-        #self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, opt.norm,
-        #                              not opt.no_dropout, opt.init_type, opt.init_gain, self.gpu_ids)
-        #self.netG = networks.define_G_HD(opt.input_nc, opt.output_nc, opt.ngf, opt.netG, 
-        #                              opt.n_downsample_global, opt.n_blocks_global, opt.n_local_enhancers, 
-        #                              opt.n_blocks_local, opt.norm, gpu_ids=self.gpu_ids)      
-        self.netG = generators.DP_GAN_Generator(opt).cuda()
+        self.netG = generators.DP_GAN_Generator(opt).to(self.device)
         
         print(self.netG)
-        #self.netG = generators.DP_GAN_Generator(opt).cuda()
-        #self.netE = networks.define_G_HD(opt.output_nc, opt.feat_num, opt.nef, 'encoder', 
-        #                                  opt.n_downsample_E, norm=opt.norm, gpu_ids=self.gpu_ids)  
         if self.isTrain:  # define a discriminator; conditional GANs need to take both input and output images; Therefore, #channels for D is input_nc + output_nc
-            #self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
-            #                              opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
-            #self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
-            #                              opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
-            #self.netD = networks.define_D(opt.input_nc + opt.output_nc, opt.ndf, opt.netD,
-            #                              opt.n_layers_D, opt.norm, opt.init_type, opt.init_gain, self.gpu_ids)
             self.netD = networks.define_D_HD(opt.input_nc + opt.output_nc, opt.ndf, opt.n_layers_D, opt.norm, opt.use_sigmoid, opt.num_D, opt.getIntermFeat, self.gpu_ids)
-            #self.netD = discriminators.DP_GAN_Discriminator(opt).cuda()
-            #self.netD = discriminators.DP_GAN_Discriminator(opt).cuda()
-        if self.isTrain:
-            # define loss functions
-            #self.criterionGAN = networks.GANLoss(opt.gan_mode).to(self.device)
-            self.criterionGAN = networks.GANLossHD(use_lsgan=not opt.no_lsgan, tensor=self.Tensor)   
+            self.criterionGAN = networks.GANLossHD(tensor=self.Tensor)   
             self.criterionL1 = torch.nn.L1Loss()
             self.criterionL2 = torch.nn.MSELoss()
             self.criterionVGG = networks.VGGLoss(self.opt.gpu_ids)
             
             
             
-            if opt.niter_fix_global > 0:                
-                import sys
-                if sys.version_info >= (3,0):
-                    finetune_list = set()
-                else:
-                    from sets import Set
-                    finetune_list = Set()
-
-                params_dict = dict(self.netG.named_parameters())
-                params = []
-                for key, value in params_dict.items():       
-                    if key.startswith('model' + str(opt.n_local_enhancers)):                    
-                        params += [value]
-                        finetune_list.add(key.split('.')[0])  
-                print('------------- Only training the local enhancer network (for %d epochs) ------------' % opt.niter_fix_global)
-                print('The layers that are finetuned are ', sorted(finetune_list))                         
-            else:
-                params = list(self.netG.parameters())
-            if self.gen_features:              
-                params += list(self.netE.parameters())         
             self.optimizer_G = torch.optim.Adam(self.netG.parameters(), lr=opt.lr, betas=(opt.beta1, 0.999))                            
 
             # optimizer D                        
@@ -129,7 +86,6 @@ class Pix2PixModel(BaseModel):
 
         The option 'direction' can be used to swap images in domain A and domain B.
         """
-        AtoB = self.opt.direction == 'AtoB'
         self.real_A = input['A'].to(self.device)
         self.real_B = input['B'].to(self.device)
 
@@ -158,21 +114,25 @@ class Pix2PixModel(BaseModel):
         # First, G(A) should fake the discriminator
         fake_AB = torch.cat((self.real_A, self.fake_B), 1)
         pred_fake = self.netD(fake_AB)
-        # Real
-        real_AB = torch.cat((self.real_A, self.real_B), 1)
-        pred_real = self.netD(real_AB)
         self.loss_G_GAN = self.criterionGAN(pred_fake, True)
-        # Second, G(A) = B
-        self.loss_G_L1 = 0#self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
-        self.loss_G_L2 = 0#self.criterionL2(self.fake_B, self.real_B) * self.opt.lambda_L2
+        
+        
+        # L1/L2 losses, they're not used but left for completeness
+        self.loss_G_L1 = 0 # self.criterionL1(self.fake_B, self.real_B) * self.opt.lambda_L1
+        self.loss_G_L2 = 0 # self.criterionL2(self.fake_B, self.real_B) * self.opt.lambda_L2
+        
+        # Perceptual loss
         self.loss_G_VGG  = self.criterionVGG(self.fake_B, self.real_B) * self.opt.lambda_VGG
         
         # GAN feature matching loss
+        real_AB = torch.cat((self.real_A, self.real_B), 1)
+        pred_real = self.netD(real_AB)
+        
         self.loss_G_GAN_Feat = 0
         feat_weights = 4.0 / (self.opt.n_layers_D + 1)
         D_weights = 1.0 / self.opt.num_D
+
         for i in range(self.opt.num_D):
-            #print(len(pred_fake[i])-1)
             for j in range(len(pred_fake[i])-1):
                 self.loss_G_GAN_Feat += feat_weights * D_weights * self.criterionL1(pred_fake[i][j], pred_real[i][j].detach()) * self.opt.lambda_feat
 

@@ -114,7 +114,7 @@ class CGanTrainDataset(Dataset):
 
         # Collect all image files from selected scan directories
         if self.isTrain:
-            self.flattened_list = [(scan_id, img_name) for scan_id in self.scan_list for img_name in os.listdir(os.path.join(root_dir1, 'rgb', scan_id)) if img_name.endswith('.jpg')] 
+            self.flattened_list = [(scan_id, img_name) for scan_id in self.scan_list for img_name in os.listdir(os.path.join(root_dir1, 'rgb', scan_id)) if img_name.endswith('.jpg') and int(img_name.split('.')[0][-2:]) not in (23, 24, 33)] 
             self.flattened_list_depth = [(scan_id, img_name) for scan_id in self.depth_list for img_name in os.listdir(os.path.join(root_dir1, scan_id, 'depth')) if img_name.endswith('.png') and int(img_name.split('.')[0][-2:]) not in (23, 24, 33)]
         else:
             self.flattened_list = [(scan_id, img_name) for scan_id in self.scan_list for img_name in os.listdir(os.path.join(root_dir1, 'rgb', scan_id)) if img_name.endswith('.jpg') and int(img_name.split('.')[0][-2:]) in (23, 24, 33)]

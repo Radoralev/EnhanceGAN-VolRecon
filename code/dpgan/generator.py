@@ -61,22 +61,20 @@ class AdaGN(nn.Module):
     '''
     adaptive group normalization
     '''
-    def __init__(self, ndim, n_channel):
+    def __init__(self, n_channel, groups, style_dim):
         """
         ndim: dim of the input features 
         n_channel: number of channels of the inputs 
         ndim_style: channel of the style features 
         """
         super().__init__()
-        style_dim = 32
-        init_scale = 1.0 
-        self.ndim = ndim
         self.n_channel = n_channel
         self.style_dim = style_dim
+        self.groups = groups
         self.out_dim = n_channel * 2
-        self.norm = nn.GroupNorm(9, n_channel)
+        self.norm = nn.GroupNorm(self.groups, n_channel)
         in_channel = n_channel 
-        self.emd = nn.Conv2d(32, 36*2, 1, stride=1, padding=0)
+        self.emd = nn.Conv2d(self.style_dim, self.out_dim, 1, stride=1, padding=0)
         self.emd.bias.data[:in_channel] = 1
         self.emd.bias.data[in_channel:] = 0
 
@@ -86,6 +84,7 @@ class AdaGN(nn.Module):
     def forward(self, image, style):
         style = self.emd(style)
         factor, bias = style.chunk(2, 1)
+        #print(image.size())
         result = self.norm(image)
         result = result * factor + bias  
         return result 
@@ -102,8 +101,12 @@ class DP_GAN_Generator(nn.Module):
         self.up = nn.Upsample(scale_factor=2)
         self.body = nn.ModuleList([])
         self.netFeat = opt.feat_extr
-        self.adaGN = AdaGN(2, 36)
         
+        if not self.opt.no_3dnoise:
+            self.adaGN = AdaGN(self.opt.semantic_nc + self.opt.z_dim, 9, 32)
+        else:
+            self.adaGN = AdaGN(self.opt.semantic_nc, 4, 32)
+
         for i in range(len(self.channels)-1):
             self.body.append(ResnetBlock_with_SPADE(self.channels[i], self.channels[i+1], opt))
 
@@ -130,25 +133,24 @@ class DP_GAN_Generator(nn.Module):
 
     def forward(self, input, z=None):
         seg = input
+        # Extract features with the FPN of VolRecon
         feats = self.netFeat(seg[:, :3, :, :])
-        if self.opt.gpu_ids != "-1":
-            seg.cuda()
+        
+        # Add noise
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")        
         if not self.opt.no_3dnoise:
-            dev = seg.get_device() if self.opt.gpu_ids != "-1" else "cpu"
-            z = torch.randn(seg.size(0), self.opt.z_dim, dtype=torch.float32, device=dev)
+            z = torch.randn(seg.size(0), self.opt.z_dim, dtype=torch.float32, device=device)
             z = z.view(z.size(0), self.opt.z_dim, 1, 1)
             z = z.expand(z.size(0), self.opt.z_dim, seg.size(2), seg.size(3))
             seg = torch.cat((z, seg), dim = 1)
-        #feats = self.upsample(feats)
-        #seg = torch.cat((seg, feats), dim=1)
+        
+        
         x = F.interpolate(seg, size=(self.init_W, self.init_H))
         feats = F.interpolate(feats, size=(16, 16), mode='bilinear')
-        #print('Inits:',self.init_W, self.init_H)
-        #print(f'x:{x.size()}')
-        #print(f'feats:{feats.size()}')
         x = self.adaGN(x, feats)
+
+
         pyrmid = []
-        #print(seg.size())
         s = seg
         for op in self.seg_pyrmid:
             s = op(s)
