@@ -1,17 +1,18 @@
 # EnhanceVolRecon
 
-> Code of the paper 'Dual Pyramid Generative Adversarial Networks for Enhancing Room-Scale Scene Reconstruction' (CVPR 2024)
+> Code of the paper 'GAN-Enhanced Generalizable Novel View Synthesis' (CVPR 2024)
 
 ### [Project](https://project_website.github.io/EnhanceVolRecon/) | [arXiv](https://arxiv.org/abs/link_to_paper) 
 
 ![teaser](./imgs/teaser.jpg)
 
->**Abstract:** Building on the success of VolRecon, a novel generalizable implicit reconstruction method, we present an extension that employs dual pyramid Generative Adversarial Networks (GANs) to improve the quality of the reconstruction output. By addressing the presence of noise in the output of VolRecon, we enhance the images while preserving semantic information, resulting in a more accurate representation of room-scale scenes.
+>**Abstract:** Building on the success of VolRecon, a novel generalizable implicit reconstruction method, we present an extension that employs dual pyramid Generative Adversarial Networks (GANs) to improve the quality of the reconstruction output. We aimed to address the persistent problem of artifacts and distortions created by volumetric reconstruction methods, specifically using VolRecon as our baseline. Our method incorporates multiple conditioning steps in the generation step. Our model showed significant improvements in image quality over the baseline, according to metrics such as PSNR, MSE, and SSIM. This research represents an important step towards more advanced, GAN-based image enhancement techniques, and it opens up several promising directions for future research.
+
 
 If you find this project useful for your research, please cite: 
 
 @misc{author2024enhancevolrecon,
-title={Dual Pyramid Generative Adversarial Networks for Enhancing Room-Scale Scene Reconstruction},
+title={GAN-Enhanced Generalizable Novel View Synthesis},
 author={Ralev, Radoslav; Walha, Nassim},
 journal={CVPR},
 year={2024}
