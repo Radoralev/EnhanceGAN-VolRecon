@@ -32,7 +32,7 @@ To train the GAN, run:
 python train_cgan.py --run_name <run_name> --ckpt_netD <ckptnetD> --ckpt_netG <ckptnetG> 
 ```
 
-Evaluating on Custom Dataset
+## Evaluating on Custom Dataset
 After running VolRecon on your custom dataset, you can improve the results by running our enhancement GAN. To do this, run:
 ```shell
 python evaluate_cgan.py --ckpt_netD <ckpt> --ckpt_netG <ckpt> --out <out.csv>
